@@ -2,6 +2,11 @@
 -- Intelligence Module Registration
 -- =============================================================================
 -- Register Intelligence Module in the marketplace_modules table
+-- NOTE: This module is backend-only (no frontend), so remote_entry_url, scope,
+-- and exposed_module are NULL. Make sure these columns allow NULL:
+--   ALTER TABLE marketplace_modules ALTER COLUMN remote_entry_url DROP NOT NULL;
+--   ALTER TABLE marketplace_modules ALTER COLUMN scope DROP NOT NULL;
+--   ALTER TABLE marketplace_modules ALTER COLUMN exposed_module DROP NOT NULL;
 -- =============================================================================
 
 INSERT INTO marketplace_modules (
@@ -23,6 +28,7 @@ INSERT INTO marketplace_modules (
     is_local,
     is_active,
     required_roles,
+    icon_url,
     metadata
 ) VALUES (
     'intelligence',
@@ -43,6 +49,7 @@ INSERT INTO marketplace_modules (
     false,
     true,
     ARRAY['Farmer', 'TenantAdmin', 'PlatformAdmin'],
+    'https://nekazari.artotxiki.com/module-icons/intelligence.svg',
     '{"icon": "🧠", "color": "#8B5CF6", "features": ["AI-powered predictions", "Time series analysis", "ML model integration"]}'::jsonb
 ) ON CONFLICT (id) DO UPDATE SET
     display_name = EXCLUDED.display_name,
