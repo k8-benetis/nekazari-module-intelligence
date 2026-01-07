@@ -4,6 +4,12 @@
 
 This module follows the [Nekazari Module Template](../module-template/README.md) structure for consistency with the platform's module ecosystem.
 
+## License
+
+Licensed under the [Apache License 2.0](LICENSE).
+
+**Why Apache 2.0?** This module uses Apache 2.0 to provide maximum flexibility for integration. Modules that connect via REST API are not affected by this license, allowing for easier commercial and open-source integration.
+
 ## Quick Start
 
 ### Prerequisites
