@@ -29,14 +29,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy installed packages from builder
-COPY --from=builder /root/.local /root/.local
-ENV PATH=/root/.local/bin:$PATH
+# Copy installed packages from builder to a location accessible by appuser
+RUN mkdir -p /app/.local && \
+    cp -r /root/.local/* /app/.local/ || true
+ENV PATH=/app/.local/bin:$PATH
 
 # Copy application code
 COPY app/ ./app/
 
-# Create non-root user
+# Create non-root user and fix permissions
 RUN useradd -m -u 1000 appuser && \
     chown -R appuser:appuser /app
 USER appuser
