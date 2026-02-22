@@ -62,14 +62,20 @@ spec:
             - name: ORION_URL
               value: "http://orion-ld-service:1026"
             - name: CONTEXT_URL
-              value: "https://nekazari.artotxiki.com/ngsi-ld-context.json"
+              value: "https://nekazari.robotika.cloud/ngsi-ld-context.json"
             # Keycloak Configuration (optional)
             - name: KEYCLOAK_URL
-              value: "https://auth.artotxiki.com/auth"
+              value: "https://auth.robotika.cloud/auth"
             - name: KEYCLOAK_REALM
               value: "nekazari"
             - name: JWT_AUDIENCE
               value: "account"
+            # Platform integration — metadata-only predict fetches historical data internally
+            - name: TIMESERIES_READER_URL
+              value: "http://timeseries-reader-service:5000"
+            # CORS — explicit origin whitelist (never *)
+            - name: CORS_ORIGINS
+              value: '["https://nekazari.robotika.cloud"]'
           resources:
             # Higher limits for Data Science workloads
             requests:

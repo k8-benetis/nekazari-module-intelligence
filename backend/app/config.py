@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     
     # API
     api_prefix: str = "/api/intelligence"
-    cors_origins: list[str] = ["*"]
+    cors_origins: list[str] = []  # Set via CORS_ORIGINS env var; empty = deny all cross-origin requests
     
     # Redis Configuration
     redis_host: str = "redis-service"
@@ -41,16 +41,19 @@ class Settings(BaseSettings):
     
     # Orion-LD Configuration
     orion_url: str = "http://orion-ld-service:1026"
-    context_url: str = "https://nekazari.artotxiki.com/ngsi-ld-context.json"
-    
+    context_url: str = ""
+
     # Keycloak / JWT Authentication (optional - for future use)
-    keycloak_url: str = "https://auth.artotxiki.com/auth"
+    keycloak_url: str = "http://keycloak:8080/auth"
     keycloak_realm: str = "nekazari"
     jwt_audience: str = "account"
     jwt_issuer: str = ""
     
     # Service-to-service authentication
     module_management_key: str = ""
+
+    # Platform timeseries-reader (for metadata-only predict: fetch historical data internally)
+    timeseries_reader_url: str = "http://timeseries-reader-service:5000"
     
     @property
     def jwt_issuer_url(self) -> str:

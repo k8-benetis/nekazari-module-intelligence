@@ -49,11 +49,11 @@ docker run -p 8000:8000 \
 ## Architecture
 
 This is a **completely independent module** with:
-- ✅ **Zero dependencies** on Core services code
-- ✅ **Standalone Docker image** optimized for Data Science workloads
-- ✅ **REST API** for triggering analysis and predictions
-- ✅ **Redis-based job queue** for async processing
-- ✅ **Orion-LD integration** for writing Prediction entities (NGSI-LD standard)
+-  **Zero dependencies** on Core services code
+-  **Standalone Docker image** optimized for Data Science workloads
+-  **REST API** for triggering analysis and predictions
+-  **Redis-based job queue** for async processing
+-  **Orion-LD integration** for writing Prediction entities (NGSI-LD standard)
 
 ## Communication Contract
 
@@ -71,10 +71,10 @@ This is a **completely independent module** with:
    - Core reads these entities from Orion-LD (no direct API calls)
 
 **Strict Separation:**
-- ❌ No shared code libraries
-- ❌ No imports from Core
-- ✅ Pure REST API + Orion-LD contract
-- ✅ Multi-tenant via `X-Tenant-ID` header
+-  No shared code libraries
+-  No imports from Core
+-  Pure REST API + Orion-LD contract
+-  Multi-tenant via `X-Tenant-ID` header
 
 ## Setup
 

@@ -9,6 +9,7 @@ import asyncio
 from typing import Dict, Any
 from app.core.job_queue import JobQueue, JobStatus
 from app.core.orion_client import create_prediction_entity
+from app.core.timeseries_client import fetch_historical_data
 from app.plugins.simple_predictor import SimplePredictor
 
 logger = logging.getLogger(__name__)
@@ -70,6 +71,20 @@ class IntelligenceWorker:
     
     async def _handle_predict(self, data: Dict[str, Any], tenant_id: str) -> Dict[str, Any]:
         """Handle prediction job and write to Orion-LD."""
+        # Metadata-only: fetch historical_data from timeseries-reader if start_time/end_time set
+        if not data.get("historical_data") and data.get("start_time") and data.get("end_time"):
+            try:
+                data["historical_data"] = await fetch_historical_data(
+                    entity_id=data["entity_id"],
+                    attribute=data["attribute"],
+                    start_time=data["start_time"],
+                    end_time=data["end_time"],
+                    tenant_id=tenant_id,
+                    prediction_horizon_hours=data.get("prediction_horizon", 24),
+                )
+            except Exception as e:
+                logger.error(f"Failed to fetch historical data from timeseries-reader: {e}", exc_info=True)
+                raise ValueError(f"Cannot fetch historical data: {e}") from e
         # Run analysis
         analysis_result = await self._handle_analyze(data, tenant_id)
         

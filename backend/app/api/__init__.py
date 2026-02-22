@@ -4,10 +4,12 @@ Intelligence Module Backend - API Routes
 Main API router that includes all endpoint definitions.
 """
 
+import json
 import logging
 import asyncio
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException, Header
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
 from app.core.redis_client import redis_client
@@ -39,11 +41,23 @@ class AnalyzeRequest(BaseModel):
     priority: int = Field(0, description="Job priority (higher = more urgent)")
 
 
+class PredictRequestMetadataOnly(BaseModel):
+    """Metadata-only predict (DataHub flow). Backend fetches historical data from timeseries-reader."""
+    entity_id: str = Field(..., description="Entity ID to predict")
+    attribute: str = Field(..., description="Attribute name (e.g. temp_avg)")
+    start_time: str = Field(..., description="Start of range (ISO 8601)")
+    end_time: str = Field(..., description="End of range (ISO 8601)")
+    prediction_horizon: int = Field(24, ge=1, le=168, description="Horizon in hours")
+    plugin: str = Field("simple_predictor", description="Plugin to use")
+
+
 class PredictRequest(BaseModel):
-    """Request model for prediction endpoint."""
+    """Request model for prediction endpoint. Supports metadata-only (start_time/end_time) or legacy (historical_data)."""
     entity_id: str = Field(..., description="Entity ID to predict")
     attribute: str = Field(..., description="Attribute name to predict")
-    historical_data: list = Field(..., description="Historical data points")
+    start_time: Optional[str] = Field(None, description="If set with end_time, backend fetches data internally")
+    end_time: Optional[str] = Field(None, description="End of range (ISO 8601)")
+    historical_data: Optional[list] = Field(None, description="If omitted and start_time/end_time set, backend fetches")
     prediction_horizon: int = Field(24, ge=1, le=168, description="Prediction horizon in hours")
     plugin: str = Field("simple_predictor", description="Plugin to use")
     priority: int = Field(0, description="Job priority")
@@ -130,29 +144,36 @@ async def trigger_prediction(
 ):
     """
     Trigger a prediction job and write results to Orion-LD.
-    
-    Returns immediately with a job ID. Results will be written as Prediction entities in Orion-LD.
+
+    Accepts metadata-only (start_time, end_time; no historical_data) or legacy (historical_data).
+    When start_time and end_time are provided and historical_data is omitted, the worker fetches
+    data internally from the platform timeseries-reader.
     """
     if not job_queue:
         await initialize_worker()
-    
+
     tenant_id = extract_tenant_id(authorization, x_tenant_id)
-    
-    job_data = {
+
+    job_data: Dict[str, Any] = {
         "entity_id": request.entity_id,
         "attribute": request.attribute,
-        "historical_data": request.historical_data,
         "prediction_horizon": request.prediction_horizon,
         "plugin": request.plugin,
-        "priority": request.priority
+        "priority": request.priority,
     }
-    
+    if request.historical_data is not None:
+        job_data["historical_data"] = request.historical_data
+    if request.start_time is not None:
+        job_data["start_time"] = request.start_time
+    if request.end_time is not None:
+        job_data["end_time"] = request.end_time
+
     job_id = await job_queue.create_job("predict", job_data, tenant_id)
-    
+
     return {
         "job_id": job_id,
         "status": "pending",
-        "message": "Prediction job created. Results will be written to Orion-LD."
+        "message": "Prediction job created. Results will be written to Orion-LD.",
     }
 
 
@@ -175,6 +196,50 @@ async def get_job_status(job_id: str):
         "result": job.get("result"),
         "error": job.get("error")
     }
+
+
+async def _stream_job_events(job_id: str):
+    """Yield SSE events while job is pending/running; final event when completed/failed/cancelled."""
+    if not job_queue:
+        yield f"data: {json.dumps({'status': 'error', 'error': 'Service not ready'})}\n\n"
+        return
+    poll_interval = 0.5
+    while True:
+        job = await job_queue.get_job(job_id)
+        if not job:
+            yield f"data: {json.dumps({'status': 'error', 'error': 'Job not found'})}\n\n"
+            return
+        status = job.get("status", "pending")
+        payload = {
+            "status": status,
+            "result": job.get("result"),
+            "error": job.get("error"),
+            "id": job.get("id"),
+            "type": job.get("type"),
+        }
+        yield f"data: {json.dumps(payload)}\n\n"
+        if status in ("completed", "failed", "cancelled"):
+            return
+        await asyncio.sleep(poll_interval)
+
+
+@router.get("/jobs/{job_id}/stream")
+async def stream_job(job_id: str):
+    """Server-Sent Events stream of job status. Use EventSource in the browser."""
+    if not job_queue:
+        raise HTTPException(status_code=503, detail="Service not ready")
+    job = await job_queue.get_job(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    return StreamingResponse(
+        _stream_job_events(job_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-store",
+            "X-Accel-Buffering": "no",
+            "Connection": "keep-alive",
+        },
+    )
 
 
 @router.delete("/jobs/{job_id}")

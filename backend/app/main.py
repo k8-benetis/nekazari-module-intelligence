@@ -18,6 +18,7 @@ See the License for the specific terms and conditions governing
 permissions and limitations under the License.
 """
 
+import logging
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -26,24 +27,21 @@ from app.config import get_settings
 from app.api import router as api_router
 from app.core.redis_client import redis_client
 
+logger = logging.getLogger(__name__)
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifespan handler for startup/shutdown events."""
-    # Startup
     settings = get_settings()
-    print(f"🚀 {settings.app_name} v{settings.app_version} starting...")
-    print(f"   API Prefix: {settings.api_prefix}")
-    print(f"   Redis: {settings.redis_host}:{settings.redis_port}")
-    print(f"   Orion-LD: {settings.orion_url}")
-    
-    # Connect Redis
+    logger.info("%s v%s starting — prefix=%s redis=%s:%s orion=%s",
+                settings.app_name, settings.app_version,
+                settings.api_prefix,
+                settings.redis_host, settings.redis_port,
+                settings.orion_url)
     await redis_client.connect()
-    
     yield
-    
-    # Shutdown
-    print(f"👋 {settings.app_name} shutting down...")
+    logger.info("%s shutting down", settings.app_name)
     await redis_client.close()
 
 

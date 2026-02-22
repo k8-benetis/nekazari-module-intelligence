@@ -6,11 +6,33 @@
 # In production, this would be replaced with actual ML models (scikit-learn, etc.)
 
 import logging
-from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from typing import Dict, Any, List, Union
+from datetime import datetime, timedelta, timezone
 from app.plugins.base import IntelligencePlugin
 
 logger = logging.getLogger(__name__)
+
+
+def _historical_to_values_and_last_ts(historical_data: Union[List[Dict[str, Any]], "pd.DataFrame"]):
+    """Normalize historical_data (DataFrame or list of dicts) to (values list, last_timestamp)."""
+    try:
+        import pandas as pd
+    except ImportError:
+        pd = None
+    if pd is not None and isinstance(historical_data, pd.DataFrame):
+        values = historical_data["value"].astype(float).tolist()
+        ts = historical_data["timestamp"]
+        last_ts = ts.iloc[-1]
+        if hasattr(last_ts, "timestamp"):
+            last_dt = last_ts.to_pydatetime() if hasattr(last_ts, "to_pydatetime") else datetime.fromtimestamp(float(last_ts), tz=timezone.utc)
+        else:
+            last_dt = datetime.fromtimestamp(float(last_ts), tz=timezone.utc)
+        return values, last_dt
+    # list of dicts
+    values = [float(p["value"]) for p in historical_data]
+    last_ts_str = historical_data[-1]["timestamp"]
+    last_dt = datetime.fromisoformat(last_ts_str.replace("Z", "+00:00"))
+    return values, last_dt
 
 
 class SimplePredictor(IntelligencePlugin):
@@ -53,20 +75,20 @@ class SimplePredictor(IntelligencePlugin):
         """
         try:
             historical_data = data.get("historical_data", [])
-            if len(historical_data) < 2:
+            if not hasattr(historical_data, "__len__") or len(historical_data) < 2:
                 raise ValueError("Need at least 2 historical data points")
             
+            values, last_timestamp = _historical_to_values_and_last_ts(historical_data)
+            last_value = values[-1]
+
             attribute = data.get("attribute", "value")
             prediction_horizon = data.get("prediction_horizon", 24)  # hours
             
             # Simple linear trend calculation
-            values = [point["value"] for point in historical_data]
             recent_trend = (values[-1] - values[0]) / len(values) if len(values) > 1 else 0
             
             # Generate predictions
             predictions: List[Dict[str, Any]] = []
-            last_timestamp = datetime.fromisoformat(historical_data[-1]["timestamp"].replace('Z', '+00:00'))
-            last_value = values[-1]
             
             for hour in range(1, prediction_horizon + 1):
                 prediction_time = last_timestamp + timedelta(hours=hour)
@@ -81,13 +103,14 @@ class SimplePredictor(IntelligencePlugin):
             # Simple confidence calculation (degrades over time)
             confidence = max(0.5, 0.9 - (prediction_horizon / 100))
             
+            n_points = len(values)
             return {
                 "predictions": predictions,
                 "confidence": round(confidence, 2),
                 "model": "simple_predictor",
                 "metadata": {
                     "trend": round(recent_trend, 4),
-                    "data_points": len(historical_data)
+                    "data_points": n_points
                 }
             }
             

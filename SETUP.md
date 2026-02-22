@@ -1,6 +1,6 @@
 # Setup Instructions for Intelligence Module
 
-## 📁 Estructura del Módulo
+##  Estructura del Módulo
 
 ```
 module-intelligence/
@@ -27,7 +27,7 @@ module-intelligence/
     └── ingress.yaml
 ```
 
-## 📁 Estructura del Módulo
+##  Estructura del Módulo
 
 ```
 module-intelligence/
@@ -52,7 +52,7 @@ module-intelligence/
 └── README.md                   # This file
 ```
 
-## 🚀 Pasos para Crear el Repositorio GitHub
+##  Pasos para Crear el Repositorio GitHub
 
 ### Paso 1: Revisar el contenido
 
@@ -97,7 +97,7 @@ git push -u origin main
 
 Ve a https://github.com/k8-benetis/nekazari-module-intelligence y verifica que todos los archivos estén presentes.
 
-## 🔧 Configuración Local (Testing)
+##  Configuración Local (Testing)
 
 ### Instalar dependencias
 
@@ -139,7 +139,7 @@ curl http://localhost:8080/health
 curl http://localhost:8080/api/intelligence/plugins
 ```
 
-## 🐳 Build Docker Image
+##  Build Docker Image
 
 ```bash
 # Build local
@@ -152,7 +152,7 @@ docker run -p 8080:8080 \
   nekazari-module-intelligence:latest
 ```
 
-## 📦 CI/CD Setup (Opcional)
+##  CI/CD Setup (Opcional)
 
 Crea `.github/workflows/build.yml` en el nuevo repositorio:
 
@@ -191,7 +191,7 @@ jobs:
           cache-to: type=gha,mode=max
 ```
 
-## ✅ Checklist Final
+##  Checklist Final
 
 - [ ] Repositorio creado en GitHub
 - [ ] Código pusheado
@@ -200,13 +200,13 @@ jobs:
 - [ ] Manifests K8s presentes
 - [ ] CI/CD configurado (opcional)
 
-## 🔗 Próximos Pasos
+##  Próximos Pasos
 
 1. **Desplegar en Kubernetes**: Usa los manifests en `k8s/`
 2. **Integrar con Core**: El Core debe llamar a la API REST del módulo
 3. **Añadir ML**: Descomenta librerías en `requirements.txt` cuando las necesites
 
-## 📝 Notas
+##  Notas
 
 - Este módulo es **completamente independiente** del Core
 - La única comunicación es vía REST API y Orion-LD

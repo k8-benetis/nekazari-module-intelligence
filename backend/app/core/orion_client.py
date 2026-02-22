@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 ORION_URL = os.getenv('ORION_URL', 'http://orion-ld-service:1026')
-CONTEXT_URL = os.getenv('CONTEXT_URL', 'https://nekazari.artotxiki.com/ngsi-ld-context.json')
+CONTEXT_URL = os.getenv('CONTEXT_URL', '')
 
 
 def inject_fiware_headers(headers: Dict[str, str], tenant_id: str, context_url: Optional[str] = None) -> Dict[str, str]:
