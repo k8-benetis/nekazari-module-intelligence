@@ -32,8 +32,6 @@ spec:
         prometheus.io/port: "8000"
         prometheus.io/path: "/metrics"
     spec:
-      imagePullSecrets:
-        - name: ghcr-secret
       containers:
         - name: backend
           image: ghcr.io/k8-benetis/nekazari-module-intelligence/intelligence-backend:latest
