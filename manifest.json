@@ -4,6 +4,14 @@
   "display_name": "Intelligence Module",
   "version": "1.0.0",
   "description": "AI/ML Intelligence Module - Analysis and Prediction Service for Nekazari Platform",
+  "description_i18n": {
+    "es": "Módulo de Inteligencia AI/ML — Servicio de Análisis y Predicción para la Plataforma Nekazari",
+    "en": "AI/ML Intelligence Module - Analysis and Prediction Service for Nekazari Platform",
+    "eu": "AI/ML Adimen Modulua — Analisi eta Iragarpen Zerbitzua Nekazari Plataformarentzat",
+    "fr": "Module d'Intelligence AI/ML — Service d'Analyse et de Prédiction pour la Plateforme Nekazari",
+    "pt": "Módulo de Inteligência AI/ML — Serviço de Análise e Previsão para a Plataforma Nekazari",
+    "ca": "Mòdul d'Intel·ligència AI/ML — Servei d'Anàlisi i Predicció per a la Plataforma Nekazari"
+  },
   "short_description": "Advanced AI/ML analysis and predictions for agricultural data",
   "author": {
     "name": "Nekazari Team",
